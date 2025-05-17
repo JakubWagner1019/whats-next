@@ -3,16 +3,20 @@
 WN_DIR=".wn"
 QUEUE_FILE="task-queue.txt"
 STACK_FILE="task-stack.txt"
+DONE_FILE="done-tasks.txt"
 PREFIXED_QUEUE_FILE="$WN_DIR/$QUEUE_FILE"
 PREFIXED_STACK_FILE="$WN_DIR/$STACK_FILE"
+PREFIXED_DONE_FILE="$WN_DIR/$DONE_FILE"
 TMP_QUEUE_FILE="/tmp/$PREFIXED_QUEUE_FILE.tmp"
 TMP_STACK_FILE="/tmp/$PREFIXED_STACK_FILE.tmp"
+TMP_DONE_FILE="/tmp/$PREFIXED_DONE_FILE.tmp"
 
 #commands
 init() {
   mkdir -p "$WN_DIR"
   touch "$PREFIXED_QUEUE_FILE"
   touch "$PREFIXED_STACK_FILE"
+  touch "$PREFIXED_DONE_FILE"
 }
 
 stack_new() {
@@ -34,8 +38,14 @@ stack_pop() {
   if [ $(stack_size) = 0 ]; then
     echo "No current task"
   else
-    echo "Popped:"
-    head -n 1 "$PREFIXED_STACK_FILE"
+    echo "Completed: "
+    line=$(head -n 1 "$PREFIXED_STACK_FILE")
+    echo "$line"
+
+    echo "$(date) - $line" | cat - "$PREFIXED_DONE_FILE" > "$TMP_DONE_FILE"
+    cat "$TMP_DONE_FILE" > "$PREFIXED_DONE_FILE"
+
+    sed -i '1d' "$PREFIXED_STACK_FILE"
     now
   fi
 }
@@ -105,8 +115,12 @@ pop() {
 }
 
 now() {
-  echo "Current task:"
-  head -n 1 "$PREFIXED_STACK_FILE"
+  if [ $(stack_size) = 0 ]; then
+    echo "No active task"
+  else
+    echo "Current task:"
+    head -n 1 "$PREFIXED_STACK_FILE"
+  fi
 }
 
 status() {
