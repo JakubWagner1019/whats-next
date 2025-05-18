@@ -96,7 +96,7 @@ stack() {
     else
       func="$1"
       shift
-      "queue_$func" "$*"
+      "stack_$func" "$*"
     fi
 }
 
