@@ -10,6 +10,7 @@ PREFIXED_DONE_FILE="$WN_DIR/$DONE_FILE"
 TMP_QUEUE_FILE="/tmp/$QUEUE_FILE.tmp"
 TMP_STACK_FILE="/tmp/$STACK_FILE.tmp"
 TMP_DONE_FILE="/tmp/$DONE_FILE.tmp"
+TMP_ANY_FILE="/tmp/anyfile.tmp"
 
 #commands
 init() {
@@ -17,6 +18,11 @@ init() {
   touch "$PREFIXED_QUEUE_FILE"
   touch "$PREFIXED_STACK_FILE"
   touch "$PREFIXED_DONE_FILE"
+}
+
+util_remove_first_line() {
+	tail -n +2 "$1" > "$TMP_ANY_FILE"
+	cat "$TMP_ANY_FILE" > "$1"
 }
 
 stack_new() {
@@ -35,7 +41,7 @@ stack_size() {
 }
 
 stack_pop() {
-  if [ $(stack_size) = 0 ]; then
+  if [ "$(stack_size)" = 0 ]; then
     echo "No current task"
   else
     echo "Completed: "
@@ -45,7 +51,7 @@ stack_pop() {
     echo "$(date) - $line" | cat - "$PREFIXED_DONE_FILE" > "$TMP_DONE_FILE"
     cat "$TMP_DONE_FILE" > "$PREFIXED_DONE_FILE"
 
-    sed -i '1d' "$PREFIXED_STACK_FILE"
+    util_remove_first_line "$PREFIXED_STACK_FILE"
     now
   fi
 }
@@ -101,12 +107,12 @@ stack() {
 }
 
 next() {
-  if [ $(queue_size) = 0 ]; then
+  if [ "$(queue_size)" = 0 ]; then
     echo "Empty queue"
   else
     head -n 1 "$PREFIXED_QUEUE_FILE" | cat - "$PREFIXED_STACK_FILE" > "$TMP_STACK_FILE"
     cat "$TMP_STACK_FILE" > "$PREFIXED_STACK_FILE"
-    sed -i '1d' "$PREFIXED_QUEUE_FILE"
+    util_remove_first_line "$PREFIXED_QUEUE_FILE"
   fi
 }
 
@@ -115,7 +121,7 @@ pop() {
 }
 
 now() {
-  if [ $(stack_size) = 0 ]; then
+  if [ "$(stack_size)" = 0 ]; then
     echo "No active task"
   else
     echo "Current task:"
