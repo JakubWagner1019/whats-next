@@ -21,16 +21,30 @@ init() {
 }
 
 util_remove_first_line() {
-	tail -n +2 "$1" > "$TMP_ANY_FILE"
-	cat "$TMP_ANY_FILE" > "$1"
+  TARGET_FILE="$1"
+  tail -n +2 "$TARGET_FILE" > "$TMP_ANY_FILE"
+  cat "$TMP_ANY_FILE" > "$TARGET_FILE"
+}
+
+util_remove_specific_line() {
+  TARGET_FILE="$1"
+  TARGET_LINE="$2"
+  awk -v INDEX="$TARGET_LINE" 'NR!=INDEX {print $0}' "$TARGET_FILE" > "$TMP_ANY_FILE"
+  cat "$TMP_ANY_FILE" > "$TARGET_FILE"
+}
+
+util_insert_first_line() {
+  TARGET_FILE="$1"
+  LINE="$2"
+  echo "$LINE" | cat - "$TARGET_FILE" > "$TMP_ANY_FILE"
+  cat "$TMP_ANY_FILE" > "$TARGET_FILE"
 }
 
 stack_new() {
   if [ "$1" = "" ]; then
     echo "No args"
   else
-    echo "$*" | cat - "$PREFIXED_STACK_FILE" > "$TMP_STACK_FILE"
-    cat "$TMP_STACK_FILE" > "$PREFIXED_STACK_FILE"
+    util_insert_first_line "$PREFIXED_STACK_FILE" "$*"
     echo "Task '$*' added to stack"
     stack_size
   fi
@@ -48,9 +62,7 @@ stack_pop() {
     line=$(head -n 1 "$PREFIXED_STACK_FILE")
     echo "$line"
 
-    echo "$(date) - $line" | cat - "$PREFIXED_DONE_FILE" > "$TMP_DONE_FILE"
-    cat "$TMP_DONE_FILE" > "$PREFIXED_DONE_FILE"
-
+    util_insert_first_line "$PREFIXED_DONE_FILE" "$(date) - $line"
     util_remove_first_line "$PREFIXED_STACK_FILE"
     now
   fi
@@ -62,9 +74,8 @@ queue_top() {
     return
   fi
 
-  sed -i "$1"'d' "$PREFIXED_QUEUE_FILE"
-  echo "$line" | cat - "$PREFIXED_QUEUE_FILE" > "$TMP_QUEUE_FILE"
-  cat "$TMP_QUEUE_FILE" > "$PREFIXED_QUEUE_FILE"
+  util_remove_specific_line "$PREFIXED_QUEUE_FILE" "$1"
+  util_insert_first_line "$PREFIXED_QUEUE_FILE" "$line"
   echo "Task '$line' moved to the top of the queue"
 }
 
@@ -110,8 +121,8 @@ next() {
   if [ "$(queue_size)" = 0 ]; then
     echo "Empty queue"
   else
-    head -n 1 "$PREFIXED_QUEUE_FILE" | cat - "$PREFIXED_STACK_FILE" > "$TMP_STACK_FILE"
-    cat "$TMP_STACK_FILE" > "$PREFIXED_STACK_FILE"
+    LINE=$(head -n 1 "$PREFIXED_QUEUE_FILE") 
+    util_insert_first_line "$PREFIXED_STACK_FILE" "$LINE"
     util_remove_first_line "$PREFIXED_QUEUE_FILE"
   fi
 }
