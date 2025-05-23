@@ -125,6 +125,7 @@ next() {
     util_insert_first_line "$PREFIXED_STACK_FILE" "$LINE"
     util_remove_first_line "$PREFIXED_QUEUE_FILE"
   fi
+  now
 }
 
 pop() {
